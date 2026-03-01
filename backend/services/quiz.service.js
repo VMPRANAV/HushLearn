@@ -3,7 +3,7 @@ const Quiz = require('../models/quiz.model');
 const QuizAttempt = require('../models/quizAttempt.model'); 
 
 class QuizService {
-  static async calculateAndSaveScore(quizId, userId, userAnswers) {
+  static async calculateAndSaveScore(quizId, userId, userAnswers, classroomId = null) { // ADD classroomId parameter
     try {
       // Validate inputs
       if (!quizId || !mongoose.Types.ObjectId.isValid(quizId)) {
@@ -53,6 +53,7 @@ class QuizService {
       const newAttempt = new QuizAttempt({
         quizId: new mongoose.Types.ObjectId(quizId),
         userId: new mongoose.Types.ObjectId(userId),
+        classroomId: classroomId ? new mongoose.Types.ObjectId(classroomId) : null,
         answers: userAnswers,
         score,
         totalQuestions,
@@ -123,6 +124,28 @@ class QuizService {
       throw error;
     }
   }
+  static async getClassroomLeaderboard(classroomId) {
+  return await QuizAttempt.aggregate([
+    { $match: { classroomId: new mongoose.Types.ObjectId(classroomId) } },
+    {
+      $group: {
+        _id: "$userId",
+        totalScore: { $sum: "$score" },
+        attempts: { $count: {} }
+      }
+    },
+    { $sort: { totalScore: -1 } },
+    { $limit: 10 },
+    {
+      $lookup: {
+        from: "users",
+        localField: "_id",
+        foreignField: "_id",
+        as: "userDetails"
+      }
+    }
+  ]);
+}
 }
 
 module.exports = QuizService;

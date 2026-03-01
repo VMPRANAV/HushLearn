@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const qaRoutes = require('./routes/qa.routes');
 const summaryRoutes = require('./routes/summary.routes');
+const classroomRoutes = require('./routes/classroom.routes'); // ADD THIS LINE
 const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -27,17 +28,20 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// API Routes
 app.use('/api/flashcards', flashcardRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/qa', qaRoutes);
 app.use('/api/summaries', summaryRoutes);
+app.use('/api/classroom', classroomRoutes); // ADD THIS LINE
 
 app.get('/', (req, res) => {
   res.status(200).send('Personalized AI Educator Backend is running successfully!');
 });
 
+// Catch-all route for frontend (should be LAST)
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
 });

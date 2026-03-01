@@ -39,6 +39,11 @@ const quizAttemptSchema = new mongoose.Schema({
     required: true,
     min: 0,
   },
+  classroomId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Classroom',
+    default: null // Null for private/solo attempts
+  },
 }, {
   // Automatically add 'createdAt' and 'updatedAt' fields. 'createdAt' will mark when the attempt was completed.
   timestamps: true,

@@ -74,14 +74,8 @@ exports.getQuizzes = async (req, res) => {
 
 exports.submitQuizAttempt = async (req, res) => {
   try {
-    console.log('Submit quiz attempt called with:', {
-      quizId: req.params.quizId,
-      userId: req.user?.id,
-      body: req.body
-    });
-
     const { quizId } = req.params;
-    const { answers } = req.body;
+    const { answers, classroomId } = req.body; // ADD classroomId
 
     // Validate input
     if (!quizId) {
@@ -98,7 +92,12 @@ exports.submitQuizAttempt = async (req, res) => {
     }
 
     // Call the service to do the heavy lifting
-    const result = await QuizService.calculateAndSaveScore(quizId, req.user.id, answers);
+    const result = await QuizService.calculateAndSaveScore(
+      quizId, 
+      req.user.id, 
+      answers,
+      classroomId // PASS classroomId
+    );
 
     console.log('Quiz attempt result:', result);
 
@@ -111,4 +110,33 @@ exports.submitQuizAttempt = async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
+};
+exports.createClassroomFromQuiz = async (req, res) => {
+  const { quizId, classroomName } = req.body;
+  const classCode = generateClassCode();
+
+  const newClassroom = new Classroom({
+    name: classroomName,
+    classCode,
+    adminId: req.user.id,
+    quizzes: [quizId],
+    members: [req.user.id]
+  });
+
+  await newClassroom.save();
+  res.status(201).json(newClassroom);
+};
+exports.joinClassroom = async (req, res) => {
+  const { classCode } = req.body;
+  const classroom = await Classroom.findOne({ classCode });
+
+  if (!classroom) return res.status(404).json({ message: "Invalid Class Code" });
+
+  // Add user to members if not already there
+  if (!classroom.members.includes(req.user.id)) {
+    classroom.members.push(req.user.id);
+    await classroom.save();
+  }
+
+  res.status(200).json(classroom);
 };

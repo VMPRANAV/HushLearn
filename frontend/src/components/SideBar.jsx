@@ -97,7 +97,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, user, onLogout }) => {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
                     >
-                        Study Snap
+                       Study Buddy
                     </motion.h2>
                     <p className="text-sm text-slate-400 mt-1">AI-Powered Learning</p>
                 </div>
