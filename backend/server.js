@@ -17,7 +17,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://study-snap-one.vercel.app',
+    'https://hush-learn.vercel.app',
     'https://*.vercel.app'              
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

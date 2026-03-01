@@ -211,14 +211,14 @@ const LandingPage = ({ onStartLearning, onLogin }) => {
               >
                 About 
                 <span className="block bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                  Study Snap
+                  Study Buddy
                 </span>
               </motion.h2>
               <motion.p 
                 variants={itemVariants}
                 className="text-lg md:text-xl text-slate-300 leading-relaxed font-light"
               >
-                Study Snap revolutionizes the way you learn by leveraging cutting-edge AI technology 
+               Study Buddy revolutionizes the way you learn by leveraging cutting-edge AI technology 
                 to transform your study materials into engaging, interactive learning experiences.
               </motion.p>
               <motion.p 
