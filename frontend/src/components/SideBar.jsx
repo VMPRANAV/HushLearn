@@ -1,15 +1,16 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-    ChartPieIcon, 
-    QueueListIcon, 
-    QuestionMarkCircleIcon,
-    ArrowRightOnRectangleIcon,
-    UserCircleIcon,
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    ChartPieIcon,
+    QueueListIcon,
     PuzzlePieceIcon,
+    QuestionMarkCircleIcon,
+    DocumentTextIcon,
+    ArrowRightOnRectangleIcon,
+    Bars3Icon,
     XMarkIcon
-} from '@heroicons/react/24/outline';
+} from '@heroicons/react/24/solid';
 
 const Sidebar = ({ isSidebarOpen, setSidebarOpen, user, onLogout }) => {
     const navigate = useNavigate();
@@ -18,30 +19,64 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, user, onLogout }) => {
     const navItems = [
         { id: 'dashboard', label: 'Dashboard', icon: ChartPieIcon, path: '/dashboard' },
         { id: 'flashcards', label: 'Flashcards', icon: QueueListIcon, path: '/flashcards' },
-        { id: 'quiz', label: 'Interactive Quiz', icon:PuzzlePieceIcon,path: '/quiz' },
-        {id :'qa',label:'Question Answers',icon:QuestionMarkCircleIcon ,path:'/qa'}
+        { id: 'quiz', label: 'Interactive Quiz', icon: PuzzlePieceIcon, path: '/quiz' },
+        { id: 'qa', label: 'Question Answers', icon: QuestionMarkCircleIcon, path: '/qa' },
+        { id: 'summary', label: 'PDF Summarizer', icon: DocumentTextIcon, path: '/summary' }
     ];
 
     const handleNavigation = (path) => {
         navigate(path);
-        // Close sidebar on mobile after navigation
-        if (window.innerWidth < 768) {
+        // Don't close sidebar on desktop, only on mobile
+        if (window.innerWidth < 1024) {
             setSidebarOpen(false);
         }
     };
 
     return (
         <>
-            {/* Mobile Backdrop */}
+            {/* Hamburger Button - Fixed Position, Always Visible */}
+            <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSidebarOpen(!isSidebarOpen)}
+                className="fixed top-4 left-4 z-[60] p-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 shadow-lg hover:shadow-xl transition-all"
+            >
+                <AnimatePresence mode="wait">
+                    {isSidebarOpen ? (
+                        <motion.div
+                            key="close"
+                            initial={{ rotate: -180, opacity: 0 }}
+                            animate={{ rotate: 0, opacity: 1 }}
+                            exit={{ rotate: 180, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <XMarkIcon className="h-6 w-6 text-white" />
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="open"
+                            initial={{ rotate: 180, opacity: 0 }}
+                            animate={{ rotate: 0, opacity: 1 }}
+                            exit={{ rotate: -180, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <Bars3Icon className="h-6 w-6 text-white" />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.button>
+
+            {/* Mobile Backdrop - Only show on mobile when open */}
             <AnimatePresence>
                 {isSidebarOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
                         onClick={() => setSidebarOpen(false)}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
                     />
                 )}
             </AnimatePresence>
@@ -50,99 +85,76 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, user, onLogout }) => {
             <motion.aside
                 initial={false}
                 animate={{
-                    x: isSidebarOpen ? 0 : -288,
+                    x: isSidebarOpen ? 0 : '-100%',
                 }}
-                transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30
-                }}
-                className={`
-                    fixed top-0 left-0 h-screen w-72 z-40
-                    bg-slate-900/95 backdrop-blur-xl 
-                    border-r border-white/10 
-                    flex flex-col
-                    shadow-2xl shadow-purple-500/10
-                    md:sticky md:z-30
-                `}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="fixed lg:sticky top-0 left-0 h-screen w-72 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 border-r border-white/10 z-50 flex flex-col shadow-2xl"
             >
-                {/* Header with Close Button (Mobile Only) */}
-                <div className="flex items-center justify-between p-6 border-b border-white/10">
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-                        Study Snap
-                    </h1>
-                    <button
-                        onClick={() => setSidebarOpen(false)}
-                        className="md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                {/* Header - Add padding to avoid hamburger overlap */}
+                <div className="pt-20 px-6 pb-6 border-b border-white/10">
+                    <motion.h2
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
                     >
-                        <XMarkIcon className="h-5 w-5 text-white" />
-                    </button>
+                        Study Snap
+                    </motion.h2>
+                    <p className="text-sm text-slate-400 mt-1">AI-Powered Learning</p>
                 </div>
-
-                {/* User Info */}
-                {user && (
-                    <div className="p-6 border-b border-white/10">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                                <UserCircleIcon className="h-7 w-7 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-white font-semibold truncate text-sm">
-                                    {user.username || user.name || 'User'}
-                                </p>
-                                <p className="text-slate-400 text-xs truncate">
-                                    {user.email}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Navigation */}
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                    {navItems.map((item) => {
+                    {navItems.map((item, index) => {
                         const Icon = item.icon;
                         const isActive = location.pathname === item.path;
                         
                         return (
                             <motion.button
                                 key={item.id}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: index * 0.05 }}
                                 onClick={() => handleNavigation(item.path)}
                                 className={`
-                                    w-full flex items-center gap-3 px-4 py-3.5 rounded-xl
-                                    transition-all duration-200 font-medium
+                                    w-full flex items-center gap-3 px-4 py-3 rounded-xl
+                                    transition-all duration-200 group
                                     ${isActive 
-                                        ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white border border-cyan-400/30 shadow-lg shadow-cyan-500/20' 
-                                        : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                                        ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30' 
+                                        : 'hover:bg-white/5 border border-transparent'
                                     }
                                 `}
-                                whileHover={{ scale: 1.02, x: 4 }}
-                                whileTap={{ scale: 0.98 }}
                             >
-                                <Icon className="h-5 w-5 flex-shrink-0" />
-                                <span className="truncate">{item.label}</span>
-                                {isActive && (
-                                    <motion.div
-                                        layoutId="activeIndicator"
-                                        className="ml-auto w-2 h-2 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50"
-                                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                    />
-                                )}
+                                <Icon className={`h-5 w-5 ${isActive ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
+                                <span className={`text-sm font-medium ${isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'}`}>
+                                    {item.label}
+                                </span>
                             </motion.button>
                         );
                     })}
                 </nav>
 
-                {/* Logout Button */}
-                <div className="p-4 border-t border-white/10">
+                {/* User Profile & Logout */}
+                <div className="p-4 border-t border-white/10 space-y-3">
+                    {user && (
+                        <div className="flex items-center gap-3 px-4 py-3 bg-white/5 rounded-xl">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold">
+                                {user.username?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                                <p className="text-sm font-semibold text-white truncate">{user.username || 'User'}</p>
+                                <p className="text-xs text-slate-400 truncate">{user.email || ''}</p>
+                            </div>
+                        </div>
+                    )}
+                    
                     <motion.button
-                        onClick={onLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200 font-medium"
-                        whileHover={{ scale: 1.02, x: 4 }}
+                        whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={onLogout}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-colors border border-red-500/20"
                     >
-                        <ArrowRightOnRectangleIcon className="h-5 w-5 flex-shrink-0" />
-                        <span>Logout</span>
+                        <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                        <span className="text-sm font-medium">Logout</span>
                     </motion.button>
                 </div>
             </motion.aside>

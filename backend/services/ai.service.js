@@ -204,6 +204,41 @@ static async generateQaSet(fileId, userQuery, marksDistribution) {
     throw new Error(`Q&A generation failed: ${error.message}`);
   }
 }
-}
 
+/**
+ * 7. Generate PDF Summary
+ */
+static async generateSummary(fileId) {
+  try {
+    // Retrieve a broad range of context to get the overall picture
+    const query = "Give me a comprehensive overview and main points of this document.";
+    const context = await this.retrieveContext(fileId, query);
+
+    const prompt = `
+      Context from Study Document:
+      ${context}
+
+      Task: Generate a comprehensive summary of the document.
+      
+      Instructions:
+      - Use clear headings.
+      - Use bullet points for key takeaways.
+      - Maintain a professional and educational tone.
+      - Highlight the most important definitions or concepts.
+      
+      Return ONLY the summary text, formatted in Markdown.
+    `;
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.5, // Lower temperature for more factual summaries
+    });
+
+    return chatCompletion.choices[0].message.content;
+  } catch (error) {
+    throw new Error(`Summary generation failed: ${error.message}`);
+  }
+}
+}
 module.exports = AiService;

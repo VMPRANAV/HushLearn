@@ -6,22 +6,23 @@ import {
     CheckCircleIcon,
     ClockIcon,
     PlusCircleIcon,
-    QuestionMarkCircleIcon
+    QuestionMarkCircleIcon,
+    DocumentTextIcon
 } from '@heroicons/react/24/solid';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 // --- Icon Map ---
-// This allows us to dynamically select an icon component based on a string from the backend
 const iconMap = {
     BookOpenIcon,
     ChartBarIcon,
     CheckCircleIcon,
     ClockIcon,
-    PlusCircleIcon
+    PlusCircleIcon,
+    DocumentTextIcon,
+    QuestionMarkCircleIcon
 };
 
-// --- Main Dashboard Component ---
 const DashboardPage = ({ isSidebarOpen }) => {
     const [userName, setUserName] = useState('');
     const [stats, setStats] = useState([]);
@@ -31,17 +32,14 @@ const DashboardPage = ({ isSidebarOpen }) => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
-    // Correctly access environment variables for broader compatibility
     const backend = import.meta.env.VITE_URL || 'http://localhost:3000';
 
     useEffect(() => {
-        // Get username from local storage
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
             try {
                 setUserName(JSON.parse(storedUser).username || 'User');
             } catch (e) {
-                console.error("Failed to parse user from localStorage", e);
                 setUserName('User');
             }
         }
@@ -52,7 +50,7 @@ const DashboardPage = ({ isSidebarOpen }) => {
             const token = localStorage.getItem('token');
 
             if (!token) {
-                setError("Authentication required. Please log in.");
+                setError("Authentication required.");
                 setIsLoading(false);
                 return;
             }
@@ -60,15 +58,12 @@ const DashboardPage = ({ isSidebarOpen }) => {
             try {
                 const headers = { 'Authorization': `Bearer ${token}` };
 
-                // Fetch all data in parallel
                 const [statsRes, activityRes] = await Promise.all([
                     fetch(`${backend}/api/dashboard/stats`, { headers }),
                     fetch(`${backend}/api/dashboard/recent-activity`, { headers })
                 ]);
 
-                if (!statsRes.ok || !activityRes.ok) {
-                    throw new Error('Failed to fetch dashboard data');
-                }
+                if (!statsRes.ok || !activityRes.ok) throw new Error('Fetch failed');
 
                 const statsData = await statsRes.json();
                 const activityData = await activityRes.json();
@@ -78,54 +73,106 @@ const DashboardPage = ({ isSidebarOpen }) => {
                 setRecentActivity(activityData || []);
 
             } catch (err) {
-                console.error("Dashboard fetch error:", err);
-                setError("Could not load your dashboard. Please try again later.");
+                setError("Could not load dashboard data.");
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchData();
-    }, [backend]); // Added backend to dependency array
+    }, [backend]);
 
     if (isLoading) {
-        return <div className="text-white text-center p-10 text-xl">Loading your dashboard...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-white text-xl">Loading...</div>
+            </div>
+        );
     }
 
     if (error) {
-        return <div className="text-red-400 text-center p-10 text-xl">{error}</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-red-400 text-xl">{error}</div>
+            </div>
+        );
     }
 
     return (
-        <div className={`max-w-7xl mx-auto transition-all duration-300 ${isSidebarOpen ? 'px-4' : 'px-6'}`}>
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-                <h1 className="text-4xl md:text-5xl font-extrabold mb-2 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+        <div className="min-h-screen w-full">
+            {/* Header Section */}
+            <motion.div 
+                initial={{ opacity: 0, y: -20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                className="mb-8 md:mb-12"
+            >
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                     Welcome Back, {userName}!
                 </h1>
-                <p className="text-lg text-slate-300 font-light">Here's your learning snapshot.</p>
+                <p className="text-base sm:text-lg md:text-xl text-slate-300 font-light">
+                    Here's your learning snapshot.
+                </p>
             </motion.div>
-            <div className={`grid grid-cols-1 ${isSidebarOpen ? 'lg:grid-cols-3' : 'xl:grid-cols-3'} gap-8 transition-all duration-300`}>
-                <div className={`${isSidebarOpen ? 'lg:col-span-2' : 'xl:col-span-2'} space-y-8`}>
-                    <div className={`grid ${isSidebarOpen ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 lg:grid-cols-4'} gap-6 transition-all duration-300`}>
+
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 mb-8">
+                {/* Left Column - Stats & Performance */}
+                <div className="xl:col-span-2 space-y-6 md:space-y-8">
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                         {stats.map((stat, i) => <StatCard key={i} stat={stat} index={i} />)}
                     </div>
+                    
+                    {/* Performance Chart */}
                     <PerformanceChart data={performance} />
                 </div>
-                <div className={`${isSidebarOpen ? 'lg:col-span-1' : 'xl:col-span-1'}`}>
+
+                {/* Right Column - Recent Activity */}
+                <div className="xl:col-span-1">
                     <RecentActivityList activities={recentActivity} />
                 </div>
             </div>
-             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.8 } }} className="mt-8 bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                <h3 className="text-xl font-bold text-white">Ready To Learn</h3>
-                <div className="flex flex-wrap justify-center gap-4">
-                    <button className="px-5 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors flex items-center gap-2" onClick={() => navigate('/flashcards')}>
-                        <BookOpenIcon className="h-5 w-5" /><span> Create FlashCard</span>
+
+            {/* Quick Actions Footer */}
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                className="bg-white/5 backdrop-blur-xl p-4 sm:p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/10 shadow-2xl"
+            >
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">
+                    Ready To Learn?
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                    <button 
+                        className="px-4 py-3 md:px-5 md:py-4 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-all hover:scale-105 flex flex-col sm:flex-row items-center justify-center gap-2 text-sm md:text-base" 
+                        onClick={() => navigate('/summary')}
+                    >
+                        <DocumentTextIcon className="h-5 w-5 md:h-6 md:w-6 text-cyan-400" />
+                        <span className="text-xs sm:text-sm md:text-base">Summarize PDF</span>
                     </button>
-                    <button className="px-5 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors flex items-center gap-2" onClick={() => navigate('/qa')}>
-                        <QuestionMarkCircleIcon className="h-5 w-5" /><span> Generate Q&A</span>
+                    
+                    <button 
+                        className="px-4 py-3 md:px-5 md:py-4 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-all hover:scale-105 flex flex-col sm:flex-row items-center justify-center gap-2 text-sm md:text-base" 
+                        onClick={() => navigate('/flashcards')}
+                    >
+                        <BookOpenIcon className="h-5 w-5 md:h-6 md:w-6 text-pink-400" />
+                        <span className="text-xs sm:text-sm md:text-base">FlashCards</span>
                     </button>
-                    <button className="px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-bold hover:opacity-90 transition-opacity flex items-center gap-2" onClick={() => navigate('/quiz')}>
-                        <PlusCircleIcon className="h-6 w-6" /><span>Create New Quiz</span>
+                    
+                    <button 
+                        className="px-4 py-3 md:px-5 md:py-4 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-all hover:scale-105 flex flex-col sm:flex-row items-center justify-center gap-2 text-sm md:text-base" 
+                        onClick={() => navigate('/qa')}
+                    >
+                        <QuestionMarkCircleIcon className="h-5 w-5 md:h-6 md:w-6 text-purple-400" />
+                        <span className="text-xs sm:text-sm md:text-base">Q&A Sets</span>
+                    </button>
+                    
+                    <button 
+                        className="px-4 py-3 md:px-5 md:py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-bold hover:opacity-90 transition-all hover:scale-105 flex flex-col sm:flex-row items-center justify-center gap-2 text-sm md:text-base shadow-lg" 
+                        onClick={() => navigate('/quiz')}
+                    >
+                        <PlusCircleIcon className="h-6 w-6 md:h-7 md:w-7" />
+                        <span className="text-xs sm:text-sm md:text-base">New Quiz</span>
                     </button>
                 </div>
             </motion.div>
@@ -133,98 +180,113 @@ const DashboardPage = ({ isSidebarOpen }) => {
     );
 };
 
-
 // --- Sub-Components ---
 
 const StatCard = ({ stat, index }) => {
-    const colors = { cyan: 'from-cyan-500/80 to-blue-500/80', green: 'from-green-500/80 to-emerald-500/80', purple: 'from-purple-500/80 to-indigo-500/80', pink: 'from-pink-500/80 to-rose-500/80' };
-    const IconComponent = iconMap[stat.icon] || BookOpenIcon; // Use the iconMap to get the component
+    const colors = { 
+        cyan: 'from-cyan-500/80 to-blue-500/80', 
+        green: 'from-green-500/80 to-emerald-500/80', 
+        purple: 'from-purple-500/80 to-indigo-500/80', 
+        pink: 'from-pink-500/80 to-rose-500/80',
+        orange: 'from-orange-500/80 to-amber-500/80' 
+    };
+    const IconComponent = iconMap[stat.icon] || BookOpenIcon;
 
     return (
         <motion.div 
             initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0, transition: { delay: index * 0.1 + 0.1 } }} 
-            className="bg-white/5 p-5 rounded-2xl border border-white/10 shadow-lg relative overflow-hidden"
+            animate={{ opacity: 1, y: 0, transition: { delay: index * 0.1 } }} 
+            whileHover={{ scale: 1.05, y: -5 }}
+            className="bg-white/5 p-4 md:p-6 rounded-xl md:rounded-2xl border border-white/10 relative overflow-hidden backdrop-blur-sm hover:bg-white/10 transition-all cursor-pointer shadow-lg hover:shadow-xl"
         >
-            <div className={`absolute top-0 left-0 h-1 w-full bg-gradient-to-r ${colors[stat.color]}`}></div>
-            <IconComponent className="h-8 w-8 text-slate-300 mb-4" />
-            <p className="text-3xl font-bold text-white">{stat.value}</p>
-            <p className="text-sm text-slate-400">{stat.title}</p>
+            <div className={`absolute top-0 left-0 h-1 w-full bg-gradient-to-r ${colors[stat.color] || colors.cyan}`}></div>
+            <IconComponent className="h-7 w-7 md:h-8 md:w-8 text-slate-300 mb-3 md:mb-4" />
+            <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1">{stat.value}</p>
+            <p className="text-xs md:text-sm text-slate-400">{stat.title}</p>
         </motion.div>
     );
 };
 
-const PerformanceChart = ({ data }) => (
-    <motion.div 
-        initial={{ opacity: 0, y: 20 }} 
-        animate={{ opacity: 1, y: 0, transition: { delay: 0.4 } }} 
-        className="bg-white/5 p-6 rounded-3xl border border-white/10 shadow-2xl"
-    >
-        <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
-            Performance Overview
-        </h3>
-        {data && data.length > 0 ? (
-            <div className="flex justify-around items-end gap-4 h-48">
-                {data.map((item, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                        <motion.div 
-                            className="w-full bg-gradient-to-b from-cyan-500 to-purple-500 rounded-t-lg" 
-                            initial={{ height: '0%' }} 
-                            animate={{ height: `${item.value}%`, transition: { delay: i * 0.1 + 0.5, duration: 0.8, ease: 'easeOut' } }}
-                        ></motion.div>
-                        <p className="text-xs font-medium text-slate-400">{item.label}</p>
-                    </div>
-                ))}
-            </div>
-        ) : (
-            <div className="h-48 flex items-center justify-center">
-                <p className="text-slate-400">Take some quizzes to see your performance chart!</p>
-            </div>
-        )}
-    </motion.div>
-);
-
 const RecentActivityList = ({ activities }) => (
     <motion.div 
         initial={{ opacity: 0, y: 20 }} 
-        animate={{ opacity: 1, y: 0, transition: { delay: 0.6 } }} 
-        className="bg-white/5 p-6 rounded-3xl border border-white/10 shadow-2xl h-full"
+        animate={{ opacity: 1, y: 0 }} 
+        className="bg-white/5 backdrop-blur-xl p-4 md:p-6 rounded-2xl md:rounded-3xl border border-white/10 shadow-2xl h-full"
     >
-        <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+        <h3 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
             Recent Activity
         </h3>
-        {activities && activities.length > 0 ? (
-            <div className="space-y-4">
-                {activities.map((activity, i) => (
+        <div className="space-y-3 md:space-y-4 max-h-[500px] md:max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+            {activities.length > 0 ? (
+                activities.map((activity, i) => (
                     <motion.div 
-                        key={activity.id} 
-                        initial={{ opacity: 0, x: 20 }} 
-                        animate={{ opacity: 1, x: 0, transition: { delay: i * 0.1 + 0.7 } }} 
-                        className="flex items-center gap-4 group"
+                        key={i} 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0, transition: { delay: i * 0.05 } }}
+                        className="flex items-center gap-3 md:gap-4 group hover:bg-white/5 p-2 md:p-3 rounded-xl transition-all cursor-pointer"
                     >
-                        <div className={`flex-shrink-0 p-3 rounded-full ${activity.type === 'quiz' ? 'bg-cyan-500/10' : 'bg-pink-500/10'}`}>
-                            {activity.type === 'quiz' ? 
-                                <CheckCircleIcon className="h-6 w-6 text-cyan-400" /> : 
-                                <BookOpenIcon className="h-6 w-6 text-pink-400" />
-                            }
+                        <div className={`flex-shrink-0 p-2 md:p-3 rounded-full ${
+                            activity.type === 'quiz' ? 'bg-cyan-500/10' : 
+                            activity.type === 'summary' ? 'bg-cyan-500/10' : 
+                            activity.type === 'qa' ? 'bg-purple-500/10' :
+                            'bg-pink-500/10'
+                        }`}>
+                            {activity.type === 'quiz' && <CheckCircleIcon className="h-5 w-5 md:h-6 md:w-6 text-cyan-400" />}
+                            {activity.type === 'summary' && <DocumentTextIcon className="h-5 w-5 md:h-6 md:w-6 text-cyan-400" />}
+                            {activity.type === 'qa' && <QuestionMarkCircleIcon className="h-5 w-5 md:h-6 md:w-6 text-purple-400" />}
+                            {activity.type === 'flashcards' && <BookOpenIcon className="h-5 w-5 md:h-6 md:w-6 text-pink-400" />}
                         </div>
                         <div className="flex-1 overflow-hidden">
-                            <p className="font-semibold text-white truncate">{activity.topic}</p>
-                            <p className="text-sm text-slate-400">{activity.score}</p>
+                            <p className="font-semibold text-white truncate text-sm md:text-base">{activity.topic}</p>
+                            <p className="text-xs md:text-sm text-slate-400">{activity.score}</p>
                         </div>
-                        <p className="text-xs text-slate-500 flex-shrink-0">
+                        <p className="text-xs text-slate-500 hidden sm:block">
                             {formatDistanceToNow(new Date(activity.time), { addSuffix: true })}
                         </p>
                     </motion.div>
-                ))}
-            </div>
-        ) : (
-            <div className="h-full flex items-center justify-center">
-                <p className="text-slate-400 text-center">No recent activity yet. <br/> Create a quiz or flashcard set!</p>
-            </div>
-        )}
+                ))
+            ) : (
+                <div className="text-center text-slate-400 py-8">
+                    <p>No recent activity</p>
+                </div>
+            )}
+        </div>
     </motion.div>
 );
 
-export default DashboardPage;
+const PerformanceChart = ({ data }) => {
+    return (
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="bg-white/5 backdrop-blur-xl p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-3xl border border-white/10 shadow-2xl"
+        >
+            <h3 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                Performance Overview
+            </h3>
+            {data && data.length > 0 ? (
+                <div className="h-64 md:h-80 lg:h-96 flex items-end justify-around gap-2 md:gap-4">
+                    {data.map((item, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ height: 0 }}
+                            animate={{ height: `${item.value}%` }}
+                            transition={{ delay: i * 0.1, duration: 0.5 }}
+                            className="flex-1 bg-gradient-to-t from-cyan-500 to-purple-500 rounded-t-lg relative group hover:from-cyan-400 hover:to-purple-400 transition-all"
+                        >
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 px-2 py-1 rounded text-xs text-white whitespace-nowrap">
+                                {item.label}: {item.value}%
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            ) : (
+                <div className="h-64 md:h-80 flex items-center justify-center text-slate-400">
+                    <p>No performance data available</p>
+                </div>
+            )}
+        </motion.div>
+    );
+};
 
+export default DashboardPage;

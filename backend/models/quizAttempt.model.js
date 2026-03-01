@@ -12,7 +12,6 @@ const answerSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
-// This is the main schema for a single attempt at a quiz.
 const quizAttemptSchema = new mongoose.Schema({
   // A reference to the specific quiz that was taken.
   quizId: {
